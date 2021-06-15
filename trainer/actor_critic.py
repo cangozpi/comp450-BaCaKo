@@ -16,14 +16,12 @@ class Agent:
 
         self.actor_critic.compile(optimizer=Adam(learning_rate=alpha, clipnorm=1.0, clipvalue=0.5))
 
-        # our addition
+
         self.state_memory = []
         self.action_memory = []
         self.reward_memory = []
         self.next_state_memory = []
         self.done_memory = []
-        self.state_value_memory = []
-        self.next_state_value_memory = []
 
     def choose_action(self, observation, epsilon=0.2):
 
@@ -32,8 +30,6 @@ class Agent:
         _, actionEstimation = self.actor_critic(state)
 
         actionEstimationNp = actionEstimation.numpy()
-
-        action_probabilities = tfp.distributions.Categorical(probs=actionEstimation)
 
         returnArray = []
         randChance = np.random.rand()
@@ -69,19 +65,11 @@ class Agent:
         returnArray.append(actionEstimationNp[0][1])
         returnArray.append(actionEstimationNp[0][2])
         action = returnArray[0]
-        log_prob = action_probabilities.log_prob(action)
+
         self.action = action
 
         return returnArray
-        # state = tf.convert_to_tensor([observation])
-        # _, probs = self.actor_critic(state)
-        #
-        # action_probabilities = tfp.distributions.Categorical(probs=probs)
-        # action = action_probabilities.sample()
-        # log_prob = action_probabilities.log_prob(action)
-        # self.action = action
-        #
-        # return action.numpy()[0]
+
 
     def save_models(self):
         print('... saving models ...')
@@ -97,8 +85,7 @@ class Agent:
         state_s = self.next_state_memory
         rewards = self.reward_memory
         dones = self.done_memory
-        state_values = self.state_value_memory
-        next_state_value = self.next_state_value_memory
+
 
         tf.convert_to_tensor(self.action_memory, dtype=tf.float32)
         with tf.GradientTape(persistent=True) as tape:
@@ -129,19 +116,6 @@ class Agent:
                 critic_loss += ((delta ** 2) - critic_loss) / count
                 total_loss += ((actor_loss + critic_loss) - total_loss) / count
 
-            # state_value, probs = self.actor_critic(state)
-            # state_value_, _ = self.actor_critic(state_)
-            # state_value = tf.squeeze(state_value)
-            # state_value_ = tf.squeeze(state_value_)
-            #
-            # action_probs = tfp.distributions.Categorical(probs=probs)
-            # log_prob = action_probs.log_prob(self.action)
-            #
-            # delta = reward + self.gamma*state_value_*(1-int(done)) - state_value
-            # actor_loss = -log_prob*delta
-            # critic_loss = delta**2
-            # total_loss = actor_loss + critic_loss
-
         gradient = tape.gradient(total_loss, self.actor_critic.trainable_variables)
 
         self.actor_critic.optimizer.apply_gradients(zip(
@@ -154,8 +128,7 @@ class Agent:
         self.reward_memory = []
         self.next_state_memory = []
         self.done_memory = []
-        self.state_value_memory = []
-        self.next_state_value_memory = []
+
 
     def store_transition(self, curState, action, reward, nextState, isDone):
         self.action_memory.append(action)

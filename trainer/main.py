@@ -11,7 +11,7 @@ def plotData(dataToPlot,xlabel, ylabel):
     plt.plot(dataToPlot)
     plt.show()
 
-type = 2
+type = 0
         # type = 0 no intrinsic short term
         # type = 1 no intrinsic long term
         # type = 2 short term model comparison with long term model
@@ -49,8 +49,7 @@ if __name__ == '__main__':
             observation_, reward, done = env.step(observation, action, type)
             stAgent.store_transition(observation, action, reward, observation_,done)
             score += reward
-            # if not load_checkpoint:
-            #stAgent.learn(observation[1:], reward, observation_[1:], done)
+
             observation = observation_
 
         score_history.append(score)

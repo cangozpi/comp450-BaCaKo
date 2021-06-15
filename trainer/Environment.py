@@ -27,8 +27,8 @@ class Env:
 
         self.actor_criticLt = ActorCriticNetwork(n_actions=3)
         self.actor_criticLt.load_weights(os.path.join('lt/actor_critic', 'actor_critic_ac'))
-        #self.actor_criticSt = ActorCriticNetwork(n_actions=3)
-        #self.shortTermModel = self.actor_criticSt.load_weights(os.path.join('st/actor_critic', 'actor_critic' + '_ac'))
+        self.actor_criticSt = ActorCriticNetwork(n_actions=3)
+        self.actor_criticSt.load_weights(os.path.join('st/actor_critic', 'actor_critic_ac'))
 
         df = pd.read_csv("shortTerm5min.csv", sep=",")
         df.drop('<TICKER>', inplace=True, axis=1)
@@ -111,7 +111,7 @@ class Env:
 
             arrayVersion += [budget[0], budget[1]]
             state = tf.convert_to_tensor([arrayVersion])
-            _, actions = self.actor_criticLt(state)     #predictions from previously long term model
+            _, actions = self.actor_criticLt(state)     #predictions from previously trained long term model
             actions = actions.numpy()
             result = []
             result.append(max(actions[0]))
@@ -119,9 +119,13 @@ class Env:
             result.append(actions[0][1])
             result.append(actions[0][2])
 
-        else:#type 3
+        else:#type 3ü
+
             arrayVersion = []
+
             df = self.stateSpaceStDict.get(date)
+            if df is None:
+                df = self.stateSpaceStDict.get((date[0],date[1]+100))
             for index, row in df.iterrows():
                 i = 0
                 for element in row:
@@ -131,7 +135,8 @@ class Env:
 
             arrayVersion += [budget[0], budget[1]]
             state = tf.convert_to_tensor([arrayVersion])
-            _, actions = self.actor_criticLt(state)     #predictions from previously short term model
+
+            _, actions = self.actor_criticSt(state)     #predictions from previously trained short term model
             actions = actions.numpy()
             result = []
             result.append(max(actions[0]))
@@ -140,7 +145,7 @@ class Env:
             result.append(actions[0][2])
 
 
-        return (abs(result[0] - -result[0])** 2) * 0.0001 + (abs(action[1] - result[1])**2) * 0.00001 + (abs(action[2] - result[2])**2) * 0.00001 + (abs(action[3] - result[3])**2) * 0.00001
+        return (abs(result[0] - -result[0])** 2) * 0.00001 + (abs(action[1] - result[1])**2) * 0.000001 + (abs(action[2] - result[2])**2) * 0.000001 + (abs(action[3] - result[3])**2) * 0.000001
 
     def scalePrices(self, stateSpace):
         # normalize columns for each frame stored in stateSpace
@@ -199,8 +204,8 @@ class Env:
         stockBudget = 1 - cashBudget
 
 
-# before 4089 lt validation , 4089 sonrası validation 20210504 saat 10
-        #yine aynı tarih st 476901 bu ve sonrası validation.
+        # before 4089 lt validation , 4089 after is validation 20210504, 1000
+        # same date and time st 476901 and after is validation.
         if type == 0 or type == 2:  # short term
             date = self.dateListSt[numpy.random.randint(47601-self.StStepSize)]
             df = self.stateSpaceStDict.get(date)
